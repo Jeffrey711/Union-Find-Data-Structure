@@ -142,18 +142,21 @@ class UFDS {
         }
         else if (NodeArray[a]->getRank() == NodeArray[b]->getRank()) {
             NodeArray[a]->setRank(NodeArray[a]->getRank() + 1);
+            NodeArray[find(b)]->setParent(a);
             NodeArray[b]->setParent(a);
             cout << "Edge (" << a << "," << b << ") successfully inserted" << endl;
             return 1;
         }
         else if (NodeArray[a]->getRank() > NodeArray[b]->getRank()) {
             NodeArray[a]->setRank(NodeArray[a]->getRank() + NodeArray[b]->getRank());
+            NodeArray[find(b)]->setParent(a);
             NodeArray[b]->setParent(a);
             cout << "Edge (" << a << "," << b << ") successfully inserted" << endl;
             return 1;
         }
         else if (NodeArray[a]->getRank() < NodeArray[b]->getRank()) {
             NodeArray[b]->setRank(NodeArray[b]->getRank() + NodeArray[a]->getRank());
+            NodeArray[find(a)]->setParent(b);
             NodeArray[a]->setParent(b);
             cout << "Edge (" << a << "," << b << ") successfully inserted" << endl;
             return 1;
