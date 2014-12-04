@@ -10,7 +10,7 @@
 #include <vector>
 using namespace std;
 
-//
+//Object to store nodes
 class Node {
   private:
    int data;
@@ -42,7 +42,7 @@ class Node {
     void setRank(int r) { rank = r; }
 };
 
-//
+//Object to store edges
 class Edge {
   private:
     int a; //Node A
@@ -81,6 +81,7 @@ class Edge {
     void setI(bool inserted) { i = inserted; }
 };
 
+//Union-Find Data Structure
 class UFDS {
   private:
     Node **NodeArray;

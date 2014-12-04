@@ -3,8 +3,8 @@ all: prog2
 prog2: prog2.o
 	g++ -g prog2.o -o prog2
 
-prog2.o: prog2.cpp prog2.h
+prog2.o: prog2.cpp
 	g++ -c -g prog2.cpp
 
 clean:
-	rm -rf *.o
+	rm  prog2.o
