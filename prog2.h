@@ -6,26 +6,32 @@
 #include <stdio.h>
 #include <string>
 #include <iostream>
+#include <algorithm>
+#include <vector>
 using namespace std;
 
+//
 class Node {
   private:
    int data;
    int parent;
    int rank;
  public:
+    //Default constructor
     Node() {
       	data = 0;
       	parent = 0;
       	rank = 0;
     }
 
+    //Constructor
     Node(int d) {
       	data = d;
         parent = d;
         rank = 0;
     }
 
+    //Getters and setters for Node object
     int getData() const { return data; }
     void setData(int d) { data = d; }
     
@@ -36,6 +42,7 @@ class Node {
     void setRank(int r) { rank = r; }
 };
 
+//
 class Edge {
   private:
     int a; //Node A
@@ -44,143 +51,156 @@ class Edge {
     bool i; //Inserted?
 
   public:
-    Edge(int p, int q, int weight) {
+    //Default constructor
+    Edge() {
+        a = 0;
+        b = 0;
+        w = 0;
+        i = 0;
+    }
+
+    //Constructor
+    Edge(int  p, int  q, int  weight) {
         a = p;
         b = q;
         w = weight;
         i = 0;
     }
 
+    //Getters and setters for Edge object
     int getA() const { return a; }
-    void setA(int node) { a = node; }
+    void setA(int  node) { a = node; }
 
     int getB() const { return b; }
-    void setB(int node) { b = node; }
+    void setB(int  node) { b = node; }
 
     int getW() const { return w; }
-    void setW(int weight) { w = weight; }
+    void setW(int  weight) { w = weight; }
 
     bool getI() const { return i; }
-    void setI(int inserted) { i = inserted; }
+    void setI(bool inserted) { i = inserted; }
 };
 
 class UFDS {
   private:
     Node **NodeArray;
-    Edge **EdgeArray;
+    vector<Edge> EdgeVec; //Create empty vector of edges
     int nodes;
     int edges;
+    int insertIndex; //Next index of edge vector to parse into
 
   public:
-    UFDS(int n, int m) { //n = nodes, m = edges
+    //Constructor for Union-Find Data Structure
+    UFDS(int  n, int  m) { //n = nodes, m = edges
         nodes = n;
         edges = m;
+        insertIndex = 0;
+        //Fill empty node array with nodes
         NodeArray = new Node*[nodes];
         for (int i=1; i<nodes+1; i++) {
             NodeArray[i] = new Node(i);
         }
-        EdgeArray = new Edge*[edges];
-        for (int i=0; i<edges; i++) {
-            EdgeArray[i] = NULL;
-        }
+        EdgeVec.resize(edges);
     }
 
-    bool newEdge(int a, int b, int w) {
-        //Check if EdgeArray is full
-        if (EdgeArray[edges-1]!=NULL) {
-        	cout << "Error: EdgeArray full; cannot add edge between " << a <<
-        	 " and " << b << endl;
-        	 return 0;
-        }
-        //Loop to find insertion index
-        for (int i=0; i<edges; i++) {
-        	if (EdgeArray[i] == NULL) {
-        		EdgeArray[i] = new Edge(a,b,w);
-        		return 1;
-        	}
-        	else if (
-        		(EdgeArray[i]->getW()==w && EdgeArray[i]->getA()==a && EdgeArray[i]->getB()>b) ||
-        		(EdgeArray[i]->getW()==w && EdgeArray[i]->getA()>a) || 
-        		(EdgeArray[i]->getW()>w)) {
-        		//Shift all nodes after index i right; beginning at penultimate node
-        		for (int j=edges-2; j>=i; j--) {
-        			//Would only run on first loop
-        			if (EdgeArray[j]!=NULL && EdgeArray[j+1]==NULL) {
-        				EdgeArray[j+1] = new Edge(EdgeArray[j]->getA(),EdgeArray[j]->getB(),
-        					EdgeArray[j]->getW());
-        			}
-        			//Shift node right one index
-        			else if (EdgeArray[j]!=NULL && EdgeArray[j+1]!=NULL) {
-        				EdgeArray[j+1]->setA(EdgeArray[j]->getA());
-        				EdgeArray[j+1]->setB(EdgeArray[j]->getB());
-        				EdgeArray[j+1]->setW(EdgeArray[j]->getW());
-        			}
-        		}
-        		//After shifting is done, insert new edge
-        		EdgeArray[i]->setA(a);
-        		EdgeArray[i]->setB(b);
-        		EdgeArray[i]->setW(w);
-        		return 1;
-        	}
-        }
-    	cout << "Error could not insert edge between " << a << " and " << b << endl;
-    	return 0;
+    //Parse edge into vector of edges
+    void newEdge(int a, int b, int w) {
+        EdgeVec[insertIndex].setA(a);
+        EdgeVec[insertIndex].setB(b);
+        EdgeVec[insertIndex].setW(w);
+
+        insertIndex++;
     }
 
     int find(int x) {
+        //If this node has depth of at least 2, go up tree to find root.
         if (NodeArray[x]->getParent() != NodeArray[NodeArray[x]->getParent()]->getParent()) {
             NodeArray[x]->setParent(find(NodeArray[x]->getParent()));
         }
-        //cout << "find(" << x << ") = " << NodeArray[x]->getParent() << endl;
-        return NodeArray[x]->getParent();
+        return NodeArray[x]->getParent(); //Return root
     }
 
     bool unify(int a, int b) {
+        //Check if A and B are in the same subtree
   	    if (find(a) == find(b)) {
             cout << "Edge (" << a << "," << b << ") creates cycle" << endl;
             return 0;
         }
+        //If A and B have the same depth
         else if (NodeArray[a]->getRank() == NodeArray[b]->getRank()) {
+            //Only depth of A is incremented
             NodeArray[a]->setRank(NodeArray[a]->getRank() + 1);
             NodeArray[find(b)]->setParent(a);
             NodeArray[b]->setParent(a);
             cout << "Edge (" << a << "," << b << ") successfully inserted" << endl;
             return 1;
         }
+        //If depth of A is greater than depth of B
         else if (NodeArray[a]->getRank() > NodeArray[b]->getRank()) {
+            //Add depth of B to depth of A
             NodeArray[a]->setRank(NodeArray[a]->getRank() + NodeArray[b]->getRank());
             NodeArray[find(b)]->setParent(a);
             NodeArray[b]->setParent(a);
             cout << "Edge (" << a << "," << b << ") successfully inserted" << endl;
             return 1;
         }
+        //If depth of B is greater than depth of A
         else if (NodeArray[a]->getRank() < NodeArray[b]->getRank()) {
+            //Add depth of A to depth of B
             NodeArray[b]->setRank(NodeArray[b]->getRank() + NodeArray[a]->getRank());
             NodeArray[find(a)]->setParent(b);
             NodeArray[a]->setParent(b);
             cout << "Edge (" << a << "," << b << ") successfully inserted" << endl;
             return 1;
         }
+        //If unify fails for some reason
         cout << "Error: Unable to perform union." << endl;
         return 0;
     }
 
+    //Comparison function for std::sort()
+    static bool sortLikeDis (const Edge& a, const Edge& b) {
+        //Return true if weight of A < weight of B
+        if (a.getW() < b.getW())
+            return a.getW() < b.getW();
+        //If weights are equal...
+        else if (a.getW() == b.getW()) {
+            //Compare source nodes
+            if (a.getA() < b.getA())
+                return a.getA() < b.getA();
+            //If sources nodes are equal, compare destination nodes
+            else if (a.getA() == b.getA()) {
+                if (a.getB() < b.getB())
+                    return a.getB() < b.getB();
+            }
+        }
+        return false;
+    }
+
+    //Sorts vector of edges and performs union on nodes
     void Kruskal() {
+        //Sort vector of edges
+        sort(EdgeVec.begin(), EdgeVec.end(), sortLikeDis);
+        //Traverse sorted list of edges to perform union.
         for (int i=0; i<edges; i++) {
-        	if (unify(EdgeArray[i]->getA(), EdgeArray[i]->getB()) == 1) {
-                EdgeArray[i]->setI(1);
+            //If edge does NOT create cycle, mark it as inserted
+        	if (unify(EdgeVec[i].getA(), EdgeVec[i].getB()) == 1) {
+                EdgeVec[i].setI(1);
             }
         }
     }
 
+    //Print out all inserted edges
     void print() const {
         int totalweight=0, count=0;
         //Check if it is a MST
+        //(Number of inserted edges) = (number of nodes)-1
         for (int i=0; i<edges; i++) {
-            if (EdgeArray[i]->getI()==1) {
+            if (EdgeVec[i].getI()==1) {
                 count++;
             }
         }
+        //(Number of inserted edges) = (number of nodes)-1
         if (count != (nodes-1)) {
             cout << "Error: MST not found." << endl;
             exit(0);
@@ -188,9 +208,9 @@ class UFDS {
 
         //If it is a MST, print edges
         for (int i=0; i<edges; i++) {
-            if (EdgeArray[i]->getI()==1) {
-                cout << EdgeArray[i]->getA() << " " << EdgeArray[i]->getB() << endl;;
-                totalweight += EdgeArray[i]->getW();
+            if (EdgeVec[i].getI()==1) {
+                cout << EdgeVec[i].getA() << " " << EdgeVec[i].getB() << endl;;
+                totalweight += EdgeVec[i].getW(); //Add weight
             }
         }
         //Print weight of MST
